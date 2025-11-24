@@ -1,0 +1,82 @@
+// ============================================================
+// Station A (A1) — author: Boshuai Ye <boshuai.ye@oulu.fi> — created: 2025-11-24 —
+// Laser: 785 nm   Resolution: ~1 cm^-1
+// Literature anchors (short list):
+// - PF6– A1g symmetric stretch ~740–750 cm^-1; speciation marker.
+//   JPCC 2015: Solvate structures & spectroscopic characterization of LiPF6 electrolytes.
+//   DOI: 10.1021/acs.jpcc.5b00826
+// - Li2CO3 ~1088–1095 cm^-1 (SEI carbonate marker). Widely reported in battery Raman.
+// - EC ring ~717 cm^-1 (solvent sanity check; strong line).
+// - CO2 ~1388 cm^-1 (gas by-product alarm; Fermi dyad).
+// - Graphite G ~1580 cm^-1, D ~1350 cm^-1 (alignment/health anchors). See Ferrari & Robertson, PRB 2000.
+//
+// Notes:
+// - Keep POF3_watch as optional (verify exact line on your station before enforcing).
+// - Start with conservative tol/sigma; tighten after 10–20 local runs per station.
+// ============================================================
+{
+  "station_id": "A1",
+  "version": "0.1.0",
+  "use_case": "electrolyte_qc",
+  "meta": {
+    "author": "Boshuai Ye",
+    "email": "boshuai.ye@oulu.fi",
+    "created_date": "2025-11-24"
+  },
+  "instrument": { "laser_nm": 785, "res_cm1": 1.0 },
+  "calibration": { "anchor": "Graphite_G", "auto_align": true },
+  "bands": [
+    {
+      "name": "PF6",
+      "nu": 745.0,
+      "tol": 8.0,
+      "sigma": 6.0,
+      "weight": 1.0,
+      "role": "must-have",
+      "interferences": ["EC_ring_717", "solvent_ring"]
+    },
+    {
+      "name": "EC_ring_717",
+      "nu": 717.0,
+      "tol": 10.0,
+      "sigma": 7.0,
+      "weight": 0.5,
+      "role": "should-have",
+      "interferences": []
+    },
+    {
+      "name": "POF3_watch",
+      "nu": 880.0,
+      "tol": 20.0,
+      "sigma": 12.0,
+      "weight": 0.4,
+      "role": "must-not",
+      "interferences": ["PVDF_840_880", "phosphate_like"]
+    },
+    {
+      "name": "CO2_watch",
+      "nu": 1388.0,
+      "tol": 12.0,
+      "sigma": 10.0,
+      "weight": 0.4,
+      "role": "must-not",
+      "interferences": []
+    },
+    {
+      "name": "Graphite_G",
+      "nu": 1580.0,
+      "tol": 6.0,
+      "sigma": 10.0,
+      "weight": 0.6,
+      "role": "anchor",
+      "interferences": ["Graphite_D_1350"]
+    }
+  ],
+  "thresholds": {
+    "tau_conf": 0.65,
+    "epsilon_rmse": 0.06,
+    "snr_min": 6.0,
+    "kappa_min": 0.60
+  },
+  "notes": "Seeded from archives; tighten tol/sigma after 10–20 local runs."
+}

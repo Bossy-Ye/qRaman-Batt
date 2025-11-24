@@ -1,0 +1,174 @@
+// ============================================================
+// Recipe Schema (Draft-07)
+// Validates a station recipe used by the Raman QA app.
+//
+// Author: Boshuai Ye <boshuai.ye@oulu.fi>
+// Created: 2025-11-24
+// Notes:
+// - Strict schema (additionalProperties: false) so recipes stay tidy.
+// - Roles are fixed: "must-have", "should-have", "must-not", "anchor".
+// - Use_case is a short id like "electrolyte_qc", "interphase_qc", etc.
+// ============================================================
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/schemas/recipe.schema.json",
+  "title": "Raman Station Recipe",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["station_id", "version", "use_case", "instrument", "calibration", "bands", "thresholds"],
+  "properties": {
+    "station_id": {
+      "type": "string",
+      "description": "Physical station identifier, e.g., A1",
+      "pattern": "^[A-Za-z0-9_-]{1,32}$"
+    },
+    "version": {
+      "type": "string",
+      "description": "SemVer of this recipe",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:[-+].*)?$"
+    },
+    "use_case": {
+      "type": "string",
+      "description": "Short id for the QA scenario (e.g., electrolyte_qc)",
+      "pattern": "^[a-z0-9_\\-]{1,64}$"
+    },
+    "meta": {
+      "type": "object",
+      "description": "Optional authoring metadata",
+      "additionalProperties": false,
+      "required": ["author", "email", "created_date"],
+      "properties": {
+        "author": { "type": "string" },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "created_date": {
+          "type": "string",
+          "description": "ISO date, e.g., 2025-11-24",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        }
+      }
+    },
+    "instrument": {
+      "type": "object",
+      "description": "Instrument profile used to set expectations",
+      "additionalProperties": false,
+      "required": ["laser_nm", "res_cm1"],
+      "properties": {
+        "laser_nm": {
+          "type": "integer",
+          "minimum": 200,
+          "maximum": 1100,
+          "description": "Excitation wavelength in nm (e.g., 532, 633, 785)"
+        },
+        "res_cm1": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 10,
+          "description": "Spectral resolution in cm^-1 (~1.0 typical)"
+        }
+      }
+    },
+    "calibration": {
+      "type": "object",
+      "description": "How to align and sanity-check spectra",
+      "additionalProperties": false,
+      "required": ["anchor", "auto_align"],
+      "properties": {
+        "anchor": {
+          "type": "string",
+          "description": "Band name to use as alignment anchor, e.g., Graphite_G"
+        },
+        "auto_align": {
+          "type": "boolean",
+          "description": "If true, auto-shift spectrum so anchor sits at its nu"
+        }
+      }
+    },
+    "bands": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Targeted bands (windows) to measure & decide on",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "nu", "tol", "sigma", "weight", "role", "interferences"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_\\-\\.]{1,64}$",
+            "description": "Band identifier (e.g., PF6, Li2CO3, Graphite_G)"
+          },
+          "nu": {
+            "type": "number",
+            "description": "Band center (cm^-1), expected position"
+          },
+          "tol": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 50,
+            "description": "Allowed absolute shift (cm^-1) for PASS"
+          },
+          "sigma": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 30,
+            "description": "Expected Gaussian sigma (cm^-1) for fitting/windowing"
+          },
+          "weight": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Importance in decision aggregation (0..1)"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["must-have", "should-have", "must-not", "anchor"],
+            "description": "Decision role of this band"
+          },
+          "interferences": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Known overlapping/nearby features"
+          }
+        }
+      }
+    },
+    "thresholds": {
+      "type": "object",
+      "description": "Global decision thresholds for this recipe",
+      "additionalProperties": false,
+      "required": ["tau_conf", "epsilon_rmse", "snr_min", "kappa_min"],
+      "properties": {
+        "tau_conf": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Classifier confidence cutoff (QSVM/RBF)"
+        },
+        "epsilon_rmse": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Max normalized fit error for PASS"
+        },
+        "snr_min": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Minimum signal-to-noise for a valid window"
+        },
+        "kappa_min": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Out-of-distribution similarity cutoff"
+        }
+      }
+    },
+    "notes": {
+      "type": "string",
+      "description": "Free-form operator notes"
+    }
+  }
+}

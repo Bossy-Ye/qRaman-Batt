@@ -1,0 +1,13 @@
+// ============================================================
+// Station A (A1) — author: Boshuai Ye <boshuai.ye@oulu.fi> — created: 2025-11-24 —
+// Index mapping use-cases to current recipe versions for this station.
+// ============================================================
+{
+  "station_id": "A1",
+  "version": "0.1.0",
+  "current": {
+    "electrolyte_qc": "recipes/A1/electrolyte_qc.json",
+    "interphase_qc": "recipes/A1/interphase_qc.json",
+    "cathode_lfp_qc": "recipes/A1/cathode_lfp_qc.json"
+  }
+}

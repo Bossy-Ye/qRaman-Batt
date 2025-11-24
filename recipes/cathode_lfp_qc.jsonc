@@ -1,0 +1,50 @@
+// ============================================================
+// Station A (A1) — author: Boshuai Ye <boshuai.ye@oulu.fi> — created: 2025-11-24 —
+// Laser: 785 nm   Resolution: ~1 cm^-1
+// Literature anchors (short list):
+// - LiFePO4 PO4 symmetric stretch ~950 cm^-1; bending mode ~590 cm^-1 (widely reported).
+// - If carbon additive present, graphite G/D may appear; avoid using as decision bands here.
+//
+// Notes:
+// - Positions can shift with state-of-(de)lithiation and temperature; validate on your station.
+// - Tighten tol/sigma after 10–20 local runs per station.
+// ============================================================
+{
+  "station_id": "A1",
+  "version": "0.1.0",
+  "use_case": "cathode_lfp_qc",
+  "meta": {
+    "author": "Boshuai Ye",
+    "email": "boshuai.ye@oulu.fi",
+    "created_date": "2025-11-24"
+  },
+  "instrument": { "laser_nm": 785, "res_cm1": 1.0 },
+  "calibration": { "anchor": "PO4_950", "auto_align": true },
+  "bands": [
+    {
+      "name": "PO4_950",
+      "nu": 950.0,
+      "tol": 8.0,
+      "sigma": 7.0,
+      "weight": 1.0,
+      "role": "must-have",
+      "interferences": []
+    },
+    {
+      "name": "PO4_590",
+      "nu": 590.0,
+      "tol": 10.0,
+      "sigma": 8.0,
+      "weight": 0.6,
+      "role": "should-have",
+      "interferences": []
+    }
+  ],
+  "thresholds": {
+    "tau_conf": 0.65,
+    "epsilon_rmse": 0.06,
+    "snr_min": 5.0,
+    "kappa_min": 0.60
+  },
+  "notes": "Centers vary slightly with state-of-(de)lithiation; confirm locally and tighten tolerances."
+}
