@@ -1,12 +1,11 @@
-# Raman → Fast Decisions (Quantum-Ready)
+# QRaman-Batt
+**Recipe-driven Raman QA for batteries: 2–5 windows → Green / Amber / Red.**
 
-Edge app for turning a live Raman spectrum into **GREEN/AMBER/RED** with **reason codes** in ~1–2 minutes using **2–5 sentinel windows**.
-- **Recipe** (JSON): expected bands + tolerances + instrument profile
-- **Edge**: cut windows → fit/classify → aggregate → log
-- **Bench**: classical RBF–SVM baseline; QSVM is a pluggable option later
+- **Recipe (JSON/JSONC):** expected bands (ν), tolerances (±tol), widths (σ), weights, and instrument profile.
+- **Edge flow:** load recipe → cut 2–5 windows → constrained fit + classify (PEAK / DRIFTED / NOT-PEAK) → aggregate decision → log (with reason codes).
+- **Bench:** classical RBF-SVM baseline now; QSVM kernel is a pluggable option later.
 
-### Quick start
+## Quick start
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-python edge/runner.py --recipe recipes/stationA-0.1.0.json --spectrum data/run001.csv --out logs/001.json
+pip install -e .
+qraman run --recipe recipes/A1/electrolyte_qc-0.1.0.jsonc --input path/to/sample.spc
