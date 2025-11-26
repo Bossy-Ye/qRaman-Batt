@@ -16,7 +16,7 @@ Then aggregate by **role**: all *must-have* satisfied and no *must-not* detected
 
 ---
 
-## 1) Inputs you need (small data collection)
+## 1) Inputs we need (small data collection)
 - **Instrument resolution** `res` (cm⁻¹) for the Raman station.  
 - **Local calibration runs:** 10–20 quick, *known-good* measurements with anchor auto-alignment on.  
 - **Tiny DOE** (1 day): a few repeats across temperature / SoC (or cycle state) / laser power to quantify real-world drift.
@@ -30,7 +30,7 @@ Goal: allow normal instrument + chemistry drift, reject real mismatches.
 
 1. From 10–20 local runs (after anchor auto-align), compute **Δνₖ = ν_obs − ν_recipe** for the band.  
 2. Take **P95(|Δν|ₗₒcₐₗ,ₖ)** = 95th percentile of |Δνₖ|.  
-3. From the mini-DOE, measure extra drift margins (pick what matters for your use case) and sum them:
+3. From the mini-DOE, measure extra drift margins (pick what matters for our use case) and sum them:
    - Temperature: **m_T = |dν/dT| · ΔT_max**  
    - SoC / cycling: **m_SoC** = P95 of added |Δν| across states  
    - Laser power change: **m_P** = P95 of added |Δν|  
@@ -44,7 +44,7 @@ Goal: allow normal instrument + chemistry drift, reject real mismatches.
 ---
 
 ### B) Band width **σₖ** (cm⁻¹)
-- Fit peaks in your 10–20 local runs, get **FWHM** per band.  
+- Fit peaks in our 10–20 local runs, get **(Full Width at Half Maximum) FWHM** per band.  
 - Convert with **σ = FWHM / (2√(2 ln 2)) ≈ FWHM / 2.355**.  
 - Take **median σ** across runs; round to nearest integer.
 
@@ -52,7 +52,7 @@ Goal: allow normal instrument + chemistry drift, reject real mismatches.
 
 ### C) Fit error **ε (RMSE)** (normalized)
 - Normalize windows (unit L2 or robust z-score).  
-- Fit each calibration window with your constrained lineshape; compute **RMSE**.  
+- Fit each calibration window with our constrained lineshape; compute **RMSE**.  
 - Set **ε** to the **P95** of those RMSE values, then add a small safety margin (e.g., +0.01).  
 - Typical starting point: **ε ≈ 0.05–0.07**.
 
@@ -61,7 +61,7 @@ Goal: allow normal instrument + chemistry drift, reject real mismatches.
 ### D) Classifier confidence **τ**
 - Train the baseline classifier (classical RBF-SVM or QSVM) on noisy/drifted *stress* windows (simulate low SNR, small shifts, overlaps).  
 - Sweep the decision threshold and plot validation accuracy vs. threshold.  
-- Pick **τ** where false accepts (bad windows marked “peak”) stay below your target (e.g., FAR ≤ 0.5%).  
+- Pick **τ** where false accepts (bad windows marked “peak”) stay below our target (e.g., FAR ≤ 0.5%).  
 - Typical starting point: **τ ≈ 0.60–0.70**.
 
 ---
@@ -70,7 +70,7 @@ Goal: allow normal instrument + chemistry drift, reject real mismatches.
 - Build a small reference bank per band (templates from local “good” windows; optionally LR–VQE template).  
 - Compute a kernel similarity (quantum fidelity or classical RBF) from a new window to the bank; average the top-k matches → **κ**.  
 - Choose **κ_min** from an ROC curve that separates **in-distribution** vs **out-of-distribution** windows (hold out some “odd” cases).  
-- Typical starting point: **κ_min ≈ 0.60** with target **AUROC ≥ 0.90**.
+- Typical starting point: **κ_min ≈ 0.60** with target **AUROC ≥ 0.90**. Start with 0.60, then re-fit it from our local data, pick **κ_min** that hits the target target **AUROC ≥ 0.90**.
 
 ---
 
@@ -78,6 +78,7 @@ Goal: allow normal instrument + chemistry drift, reject real mismatches.
 - Define SNR as **peak height / baseline-noise std** in the window.  
 - From local runs at “normal” and “low” SNR, find the lowest SNR where fits remain reliable (RMSE ≤ ε, confidence ≥ τ).  
 - Set **SNR_min** just above that elbow. Typical: **SNR_min ≈ 5–8**.
+- Temporarily use SNR_min = 6, then recompute after the first 10-20 runs.
 
 ---
 
@@ -104,14 +105,12 @@ Goal: allow normal instrument + chemistry drift, reject real mismatches.
 
 | Parameter | Typical start | How to finalize |
 |---|---|---|
-| **tolₖ** | max(5×res, P95(|Δν|ₗₒcₐₗ)+m_chem) | From local + DOE |
-| **σₖ** | median local σ (from FWHM) | From local |
-| **ε** | 0.05–0.07 | P95 local RMSE + margin |
-| **τ** | 0.60–0.70 | From validation curve / FAR target |
-| **κ_min** | 0.60 | From OOD ROC (AUROC ≥ 0.90) |
-| **SNR_min** | 5–8 | From SNR “elbow” |
-
----
+| `tol_k`  | `max(5×res, P95Δν_local,k) + m_chem` | From local + DOE |
+| `σ_k`    | `median_local(FWHM/2.355)`            | From local |
+| `ε`      | `0.05–0.07`                           | `P95(local RMSE) + margin` |
+| `τ`      | `0.60–0.70`                           | From validation curve / FAR target |
+| `κ_min`  | `0.60`                                | From OOD ROC (`AUROC ≥ 0.90`) |
+| `SNR_min` | `5–8`                                 | From SNR “elbow” |
 
 ## 6) Glossary
 - **Δν**: band shift = ν_observed − ν_recipe (cm⁻¹)  
@@ -124,4 +123,4 @@ Goal: allow normal instrument + chemistry drift, reject real mismatches.
 
 ---
 
-**Implementation hint:** store the computed values back into your station’s recipe JSON (bump `version` and keep notes), and log the calibration artifacts (cal runs list, DOE summary, ROC plots) for audit.
+**Implementation hint:** store the computed values back into our station’s recipe JSON (bump `version` and keep notes), and log the calibration artifacts (cal runs list, DOE summary, ROC plots) for audit.
