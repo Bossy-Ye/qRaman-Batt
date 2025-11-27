@@ -10,8 +10,12 @@
 // - Tighten tol/sigma after 10–20 local runs per station.
 // ============================================================
 {
-  "station_id": "A1",
-  "version": "0.1.0",
+  // ----------- required metadata for schema ----------- //
+  "recipe_name": "cathode_lfp_qc",
+  "recipe_version": "0.1.0",
+  "station": "A1",
+
+  // ----------- extra metadata (allowed by schema) ----- //
   "use_case": "cathode_lfp_qc",
   "meta": {
     "author": "Boshuai Ye",
@@ -20,31 +24,34 @@
   },
   "instrument": { "laser_nm": 785, "res_cm1": 1.0 },
   "calibration": { "anchor": "PO4_950", "auto_align": true },
+
+  // ----------- per-band thresholds -------------------- //
   "bands": [
     {
       "name": "PO4_950",
-      "nu": 950.0,
+      "center": 950.0,
       "tol": 8.0,
       "sigma": 7.0,
-      "weight": 1.0,
-      "role": "must-have",
-      "interferences": []
+      "role": "must_have",
+      "window_range": { "min": 930.0, "max": 970.0 },
+      "notes": "PO4 symmetric stretch; main sentinel for LFP."
     },
     {
       "name": "PO4_590",
-      "nu": 590.0,
+      "center": 590.0,
       "tol": 10.0,
       "sigma": 8.0,
-      "weight": 0.6,
-      "role": "should-have",
-      "interferences": []
+      "role": "watch",  // was 'should-have'
+      "window_range": { "min": 570.0, "max": 610.0 },
+      "notes": "PO4 bending mode; supporting band for consistency."
     }
   ],
-  "thresholds": {
-    "tau_conf": 0.65,
-    "epsilon_rmse": 0.06,
-    "snr_min": 5.0,
-    "kappa_min": 0.60
-  },
+
+  // ----------- global thresholds (schema-level) ------- //
+  "epsilon": 0.06,
+  "tau": 0.65,
+  "snr_min": 5.0,
+  "kappa_min": 0.60,
+
   "notes": "Centers vary slightly with state-of-(de)lithiation; confirm locally and tighten tolerances."
 }

@@ -15,8 +15,12 @@
 // - Start with conservative tol/sigma; tighten after 10–20 local runs per station.
 // ============================================================
 {
-  "station_id": "A1",
-  "version": "0.1.0",
+  // ----------- required metadata for schema ----------- //
+  "recipe_name": "electrolyte_qc",
+  "recipe_version": "0.1.0",
+  "station": "A1",
+
+  // ----------- extra metadata (allowed by schema) ----- //
   "use_case": "electrolyte_qc",
   "meta": {
     "author": "Boshuai Ye",
@@ -25,58 +29,61 @@
   },
   "instrument": { "laser_nm": 785, "res_cm1": 1.0 },
   "calibration": { "anchor": "Graphite_G", "auto_align": true },
+
+  // ----------- per-band thresholds -------------------- //
   "bands": [
     {
       "name": "PF6",
-      "nu": 745.0,
+      "center": 745.0,
       "tol": 8.0,
       "sigma": 6.0,
-      "weight": 1.0,
-      "role": "must-have",
-      "interferences": ["EC_ring_717", "solvent_ring"]
+      "role": "must_have",
+      "window_range": { "min": 730.0, "max": 760.0 },
+      "notes": "PF6– speciation marker; interferences: EC_ring_717, solvent_ring."
     },
     {
       "name": "EC_ring_717",
-      "nu": 717.0,
+      "center": 717.0,
       "tol": 10.0,
       "sigma": 7.0,
-      "weight": 0.5,
-      "role": "should-have",
-      "interferences": []
+      "role": "watch",  // was 'should-have'
+      "window_range": { "min": 700.0, "max": 735.0 },
+      "notes": "EC ring breathing; strong solvent sanity check."
     },
     {
       "name": "POF3_watch",
-      "nu": 880.0,
+      "center": 880.0,
       "tol": 20.0,
       "sigma": 12.0,
-      "weight": 0.4,
-      "role": "must-not",
-      "interferences": ["PVDF_840_880", "phosphate_like"]
+      "role": "must_not",
+      "window_range": { "min": 860.0, "max": 900.0 },
+      "notes": "Watch for POF3; interferences: PVDF_840_880, phosphate_like. Verify exact band on station before enforcing."
     },
     {
       "name": "CO2_watch",
-      "nu": 1388.0,
+      "center": 1388.0,
       "tol": 12.0,
       "sigma": 10.0,
-      "weight": 0.4,
-      "role": "must-not",
-      "interferences": []
+      "role": "must_not",
+      "window_range": { "min": 1360.0, "max": 1410.0 },
+      "notes": "CO2 Fermi dyad region; gas by-product alarm."
     },
     {
       "name": "Graphite_G",
-      "nu": 1580.0,
+      "center": 1580.0,
       "tol": 6.0,
       "sigma": 10.0,
-      "weight": 0.6,
       "role": "anchor",
-      "interferences": ["Graphite_D_1350"]
+      "window_range": { "min": 1550.0, "max": 1610.0 },
+      "notes": "Graphite G band anchor; interferences: Graphite_D_1350."
     }
   ],
-  "thresholds": {
-    "tau_conf": 0.65,
-    "epsilon_rmse": 0.06,
-    "snr_min": 6.0,
-    "kappa_min": 0.60
-  },
+
+  // ----------- global thresholds (schema-level) ------- //
+  "epsilon": 0.06,
+  "tau": 0.65,
+  "snr_min": 6.0,
+  "kappa_min": 0.60,
+
   "notes": "Seeded from archives; tighten tol/sigma after 10–20 local runs."
 }

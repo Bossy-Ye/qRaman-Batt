@@ -1,174 +1,181 @@
-// ============================================================
-// Recipe Schema (Draft-07)
-// Validates a station recipe used by the Raman QA app.
-//
-// Author: Boshuai Ye <boshuai.ye@oulu.fi>
-// Created: 2025-11-24
-// Notes:
-// - Strict schema (additionalProperties: false) so recipes stay tidy.
-// - Roles are fixed: "must-have", "should-have", "must-not", "anchor".
-// - Use_case is a short id like "electrolyte_qc", "interphase_qc", etc.
-// ============================================================
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://example.com/schemas/recipe.schema.json",
-  "title": "Raman Station Recipe",
+  // ================================================================
+  // qRaman-Batt Recipe Schema
+  // Defines how every QC recipe must be structured.
+  //
+  // Each recipe has:
+  //   • Per-band thresholds  → chemistry-specific settings (tol_k, sigma_k, role, window_range, etc.)
+  //   • Global thresholds    → station / model settings (epsilon, tau, kappa_min, snr_min)
+  //
+  // Example of a single band entry (per-band thresholds):
+  //
+  // {
+  //   "name": "PO4_950",
+  //   "center": 950,
+  //   "tol": 8,
+  //   "sigma": 7,
+  //   "role": "must_have",
+  //   "window_range": {
+  //     "min": 930,
+  //     "max": 970
+  //   },
+  //   "fit_lims": {
+  //     "amp_min": 0.0,
+  //     "amp_max": 1.5,
+  //     "sigma_min": 3,
+  //     "sigma_max": 12
+  //   },
+  //   "notes": "Main phosphate stretch band; sentinel for LFP chemistry."
+  // }
+  //
+  // Global thresholds will sit at the top level of a recipe, e.g.:
+  //
+  //   "epsilon": 0.06,
+  //   "tau": 0.65,
+  //   "kappa_min": 0.60,
+  //   "snr_min": 6
+  //
+  // ================================================================
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "qRaman-Batt Recipe Schema",
+  "description": "Schema for QC recipes used by the qRaman-Batt decision engine.",
   "type": "object",
-  "additionalProperties": false,
-  "required": ["station_id", "version", "use_case", "instrument", "calibration", "bands", "thresholds"],
+
+  "required": [
+    "recipe_name",
+    "recipe_version",
+    "station",
+    "bands",
+    "epsilon",
+    "tau",
+    "kappa_min",
+    "snr_min"
+  ],
+
   "properties": {
-    "station_id": {
+
+    // ------------------------------------------------------------
+    // Metadata (recipe-level information)
+    // ------------------------------------------------------------
+    "recipe_name": {
       "type": "string",
-      "description": "Physical station identifier, e.g., A1",
-      "pattern": "^[A-Za-z0-9_-]{1,32}$"
+      "description": "Human-readable name for the QC recipe (e.g., 'electrolyte_qc')."
     },
-    "version": {
+    "recipe_version": {
       "type": "string",
-      "description": "SemVer of this recipe",
-      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:[-+].*)?$"
+      "description": "Semantic version string (e.g., '1.0.0'). Increment when thresholds update."
     },
-    "use_case": {
+    "station": {
       "type": "string",
-      "description": "Short id for the QA scenario (e.g., electrolyte_qc)",
-      "pattern": "^[a-z0-9_\\-]{1,64}$"
+      "description": "Station ID or environment tag where this recipe applies (e.g., 'A1')."
     },
-    "meta": {
-      "type": "object",
-      "description": "Optional authoring metadata",
-      "additionalProperties": false,
-      "required": ["author", "email", "created_date"],
-      "properties": {
-        "author": { "type": "string" },
-        "email": {
-          "type": "string",
-          "format": "email"
-        },
-        "created_date": {
-          "type": "string",
-          "description": "ISO date, e.g., 2025-11-24",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
-        }
-      }
+    "notes": {
+      "type": "string",
+      "description": "Optional free-form notes about calibration assumptions, DOE source, etc."
     },
-    "instrument": {
-      "type": "object",
-      "description": "Instrument profile used to set expectations",
-      "additionalProperties": false,
-      "required": ["laser_nm", "res_cm1"],
-      "properties": {
-        "laser_nm": {
-          "type": "integer",
-          "minimum": 200,
-          "maximum": 1100,
-          "description": "Excitation wavelength in nm (e.g., 532, 633, 785)"
-        },
-        "res_cm1": {
-          "type": "number",
-          "exclusiveMinimum": 0,
-          "maximum": 10,
-          "description": "Spectral resolution in cm^-1 (~1.0 typical)"
-        }
-      }
-    },
-    "calibration": {
-      "type": "object",
-      "description": "How to align and sanity-check spectra",
-      "additionalProperties": false,
-      "required": ["anchor", "auto_align"],
-      "properties": {
-        "anchor": {
-          "type": "string",
-          "description": "Band name to use as alignment anchor, e.g., Graphite_G"
-        },
-        "auto_align": {
-          "type": "boolean",
-          "description": "If true, auto-shift spectrum so anchor sits at its nu"
-        }
-      }
-    },
+
+    // ------------------------------------------------------------
+    // Per-band thresholds: chemistry-specific band definitions
+    // ------------------------------------------------------------
     "bands": {
       "type": "array",
-      "minItems": 1,
-      "description": "Targeted bands (windows) to measure & decide on",
+      "description": "Definition of sentinel bands with per-band thresholds.",
       "items": {
         "type": "object",
-        "additionalProperties": false,
-        "required": ["name", "nu", "tol", "sigma", "weight", "role", "interferences"],
+        "required": ["name", "center", "tol", "sigma", "role", "window_range"],
         "properties": {
+
           "name": {
             "type": "string",
-            "pattern": "^[A-Za-z0-9_\\-\\.]{1,64}$",
-            "description": "Band identifier (e.g., PF6, Li2CO3, Graphite_G)"
+            "description": "Short identifier (e.g., 'PF6_745', 'EC_717', 'PO4_950')."
           },
-          "nu": {
+
+          "center": {
             "type": "number",
-            "description": "Band center (cm^-1), expected position"
+            "description": "Expected band center nu_0 (cm-1) after anchor alignment."
           },
+
           "tol": {
             "type": "number",
-            "minimum": 0,
-            "maximum": 50,
-            "description": "Allowed absolute shift (cm^-1) for PASS"
+            "description": "Allowed absolute shift tolerance |delta_nu| (cm-1). Computed from local data + DOE."
           },
+
           "sigma": {
             "type": "number",
-            "minimum": 0,
-            "maximum": 30,
-            "description": "Expected Gaussian sigma (cm^-1) for fitting/windowing"
+            "description": "Expected linewidth sigma (cm-1). Derived from median FWHM/2.355."
           },
-          "weight": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 1,
-            "description": "Importance in decision aggregation (0..1)"
-          },
+
           "role": {
             "type": "string",
-            "enum": ["must-have", "should-have", "must-not", "anchor"],
-            "description": "Decision role of this band"
+            "enum": ["anchor", "must_have", "must_not", "watch"],
+            "description": "Role of this band in the decision logic (see BANDS_ROLE.md)."
           },
-          "interferences": {
-            "type": "array",
-            "items": { "type": "string" },
-            "description": "Known overlapping/nearby features"
+
+          "window_range": {
+            "type": "object",
+            "description": "Window around the band center to extract for fitting/classification.",
+            "required": ["min", "max"],
+            "properties": {
+              "min": {
+                "type": "number",
+                "description": "Lower bound of the Raman shift window (cm-1)."
+              },
+              "max": {
+                "type": "number",
+                "description": "Upper bound of the Raman shift window (cm-1)."
+              }
+            }
+          },
+
+          "fit_lims": {
+            "type": "object",
+            "description": "Optional physical constraints on peak amplitude and width during fitting.",
+            "properties": {
+              "amp_min": {
+                "type": "number",
+                "description": "Minimum allowed amplitude for the fitted peak (normalized units)."
+              },
+              "amp_max": {
+                "type": "number",
+                "description": "Maximum allowed amplitude for the fitted peak (normalized units)."
+              },
+              "sigma_min": {
+                "type": "number",
+                "description": "Minimum allowed sigma (cm-1) for the peak."
+              },
+              "sigma_max": {
+                "type": "number",
+                "description": "Maximum allowed sigma (cm-1) for the peak."
+              }
+            }
+          },
+
+          "notes": {
+            "type": "string",
+            "description": "Optional notes for this specific band (e.g., 'watch for additive X overlap')."
           }
         }
       }
     },
-    "thresholds": {
-      "type": "object",
-      "description": "Global decision thresholds for this recipe",
-      "additionalProperties": false,
-      "required": ["tau_conf", "epsilon_rmse", "snr_min", "kappa_min"],
-      "properties": {
-        "tau_conf": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 1,
-          "description": "Classifier confidence cutoff (QSVM/RBF)"
-        },
-        "epsilon_rmse": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 1,
-          "description": "Max normalized fit error for PASS"
-        },
-        "snr_min": {
-          "type": "number",
-          "minimum": 0,
-          "description": "Minimum signal-to-noise for a valid window"
-        },
-        "kappa_min": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 1,
-          "description": "Out-of-distribution similarity cutoff"
-        }
-      }
+
+    // ------------------------------------------------------------
+    // Global thresholds: shared across all bands for this recipe
+    // ------------------------------------------------------------
+    "epsilon": {
+      "type": "number",
+      "description": "Fit error limit (normalized RMSE). Usually P95(local RMSE) + margin."
     },
-    "notes": {
-      "type": "string",
-      "description": "Free-form operator notes"
+    "tau": {
+      "type": "number",
+      "description": "Classifier confidence threshold in [0, 1]. Controls false accepts (FAR)."
+    },
+    "kappa_min": {
+      "type": "number",
+      "description": "Minimum OOD similarity kappa to treat a window as in-distribution."
+    },
+    "snr_min": {
+      "type": "number",
+      "description": "Minimum signal-to-noise ratio required before classification."
     }
   }
 }

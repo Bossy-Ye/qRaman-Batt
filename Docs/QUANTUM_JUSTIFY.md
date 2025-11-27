@@ -2,7 +2,7 @@
 **Most updates stay classical** — fast, cheap, and good enough for day-to-day recipe tweaks.
 
 **A. Physics-based updates when archives don’t fit.**  
-Raman band **positions/intensities** come from **polarizability derivatives** (how α changes along a vibrational mode). When local chemistry/temperature/solvation differs from the archives, we need those **response properties** under *your* conditions to rebuild the expected-bands table (centers, widths, weights) in a defensible way. **LR–VQE / variational subspace + linear-response** methods provide access to excitations and response functions on NISQ hardware, which is a credible path to predicting band shifts/strengths (with uncertainty) for hard cases. 
+Raman band **positions/intensities** come from **polarizability derivatives** (how α changes along a vibrational mode). When local chemistry/temperature/solvation differs from the archives, we need those **response properties** under *our* conditions to rebuild the expected-bands table (centers, widths, weights) in a defensible way. **LR–VQE / variational subspace + linear-response** methods provide access to excitations and response functions on NISQ hardware, which is a credible path to predicting band shifts/strengths (with uncertainty) for hard cases. 
 
 **B. Robust tagging in noisy/overlapped windows.**  
 For per-window labelling (PEAK / DRIFTED / NOT-PEAK) at **low SNR** or with **overlap**, a **quantum kernel (QSVM)** can offer richer feature maps than a classical RBF baseline. We keep QSVM as a drop-in kernel; if it beats RBF on our stress bench, we use it—otherwise we fall back to RBF with the same interface. 

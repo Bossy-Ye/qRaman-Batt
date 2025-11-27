@@ -12,8 +12,12 @@
 // - Tighten tol/sigma after 10–20 local runs per station.
 // ============================================================
 {
-  "station_id": "A1",
-  "version": "0.1.0",
+  // ----------- required metadata for schema ----------- //
+  "recipe_name": "interphase_qc",
+  "recipe_version": "0.1.0",
+  "station": "A1",
+
+  // ----------- extra metadata (allowed by schema) ----- //
   "use_case": "interphase_qc",
   "meta": {
     "author": "Boshuai Ye",
@@ -22,49 +26,52 @@
   },
   "instrument": { "laser_nm": 785, "res_cm1": 1.0 },
   "calibration": { "anchor": "Graphite_G", "auto_align": true },
+
+  // ----------- per-band thresholds -------------------- //
   "bands": [
     {
       "name": "Li2CO3",
-      "nu": 1090.0,
+      "center": 1090.0,
       "tol": 10.0,
       "sigma": 7.0,
-      "weight": 1.0,
-      "role": "must-have",
-      "interferences": ["phosphate_like", "polycarbonates"]
+      "role": "must_have",
+      "window_range": { "min": 1070.0, "max": 1110.0 },
+      "notes": "SEI carbonate marker; interferences: phosphate_like, polycarbonates."
     },
     {
       "name": "Carbonate_region",
-      "nu": 1075.0,
+      "center": 1075.0,
       "tol": 25.0,
       "sigma": 12.0,
-      "weight": 0.5,
-      "role": "should-have",
-      "interferences": ["overlap_caution"]
+      "role": "watch",  // was 'should-have'
+      "window_range": { "min": 1050.0, "max": 1100.0 },
+      "notes": "Broad carbonate region; overlap_caution."
     },
     {
       "name": "POF3_watch",
-      "nu": 880.0,
+      "center": 880.0,
       "tol": 20.0,
       "sigma": 12.0,
-      "weight": 0.4,
-      "role": "must-not",
-      "interferences": ["PVDF_840_880", "phosphate_like"]
+      "role": "must_not",
+      "window_range": { "min": 860.0, "max": 900.0 },
+      "notes": "Watch for POF3; interferences: PVDF_840_880, phosphate_like."
     },
     {
       "name": "Graphite_G",
-      "nu": 1580.0,
+      "center": 1580.0,
       "tol": 6.0,
       "sigma": 10.0,
-      "weight": 0.6,
       "role": "anchor",
-      "interferences": ["Graphite_D_1350"]
+      "window_range": { "min": 1550.0, "max": 1610.0 },
+      "notes": "Anchor band; interferences: Graphite_D_1350."
     }
   ],
-  "thresholds": {
-    "tau_conf": 0.65,
-    "epsilon_rmse": 0.06,
-    "snr_min": 6.0,
-    "kappa_min": 0.60
-  },
+
+  // ----------- global thresholds (schema-level) ------- //
+  "epsilon": 0.06,
+  "tau": 0.65,
+  "snr_min": 6.0,
+  "kappa_min": 0.60,
+
   "notes": "Use Li2CO3 as decision driver; verify overlap in 1050–1100 cm^-1 region on your station."
 }

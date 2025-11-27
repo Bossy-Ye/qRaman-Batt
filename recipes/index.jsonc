@@ -6,8 +6,8 @@
   "station_id": "A1",
   "version": "0.1.0",
   "current": {
-    "electrolyte_qc": "recipes/A1/electrolyte_qc.json",
-    "interphase_qc": "recipes/A1/interphase_qc.json",
-    "cathode_lfp_qc": "recipes/A1/cathode_lfp_qc.json"
+    "electrolyte_qc": "electrolyte_qc.jsonc",
+    "interphase_qc": "interphase_qc.jsonc",
+    "cathode_lfp_qc": "cathode_lfp_qc.jsonc"
   }
 }
