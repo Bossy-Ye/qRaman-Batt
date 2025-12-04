@@ -53,8 +53,18 @@ class BandConfig:
     role: str
     window_min: float
     window_max: float
+
+    # Optional model / fitting configuration
     fit_lims: Optional[FitLims] = None
     notes: Optional[str] = None
+
+    # Band-shape model (all optional with safe defaults)
+    # "gaussian" | "pseudovoigt" | "template"
+    shape: str = "gaussian"
+    # For pseudo-Voigt; ignored otherwise
+    eta: Optional[float] = None
+    # Optional fixed template for this band (same length as window)
+    template: Optional[List[float]] = None
 
 
 @dataclass
@@ -72,7 +82,8 @@ class RecipeConfig:
     kappa_min: float
     snr_min: float
     notes: Optional[str] = None
-    raw: Dict[str, Any] | None = None  # keep original dict for debugging / logging
+    # keep original dict for debugging / logging
+    raw: Dict[str, Any] | None = None
 
 
 # --------------------------------------------------------------------
@@ -153,16 +164,35 @@ def _band_from_dict(entry: Dict[str, Any]) -> BandConfig:
             sigma_max=fit_lims_raw.get("sigma_max"),
         )
 
+    # Normalise role for backwards-compatibility:
+    #   "must_have" → "must-have"
+    #   "must_not"  → "must-not"
+    raw_role = str(entry["role"])
+    role = raw_role.replace("_", "-")
+
+    # Normalise / validate shape
+    raw_shape = str(entry.get("shape", "gaussian")).lower()
+    if raw_shape not in {"gaussian", "pseudovoigt", "template"}:
+        shape = "gaussian"
+    else:
+        shape = raw_shape
+
+    eta = entry.get("eta")
+    template = entry.get("template")
+
     return BandConfig(
         name=entry["name"],
         center=float(entry["center"]),
         tol=float(entry["tol"]),
         sigma=float(entry["sigma"]),
-        role=str(entry["role"]),
+        role=role,
         window_min=float(window["min"]),
         window_max=float(window["max"]),
         fit_lims=fit_lims,
         notes=entry.get("notes"),
+        shape=shape,
+        eta=float(eta) if eta is not None else None,
+        template=list(template) if isinstance(template, list) else None,
     )
 
 
@@ -246,7 +276,11 @@ def load_recipes_from_index(
     base_dir = index_path.parent
 
     # Support both flat mapping and {"current": {...}} style
-    if isinstance(index_dict, dict) and "current" in index_dict and isinstance(index_dict["current"], dict):
+    if (
+        isinstance(index_dict, dict)
+        and "current" in index_dict
+        and isinstance(index_dict["current"], dict)
+    ):
         mapping = index_dict["current"]
     else:
         mapping = index_dict
@@ -270,13 +304,13 @@ def format_recipe(recipe: RecipeConfig) -> str:
       epsilon=0.06  tau=0.65  kappa_min=0.60  snr_min=6.0
 
       Bands:
-        name          center   tol   sigma   role        window
-        ------------------------------------------------------------
-        PF6           745.0    8.0   6.0     must_have   [730.0, 760.0]
-        EC_ring_717   717.0   10.0   7.0     watch       [700.0, 735.0]
+        name          center   tol   sigma   role        shape      window
+        ------------------------------------------------------------------
+        PF6           745.0    8.0   6.0     must-have   gaussian   [730.0, 760.0]
+        EC_ring_717   717.0   10.0   7.0     watch       gaussian   [700.0, 735.0]
         ...
     """
-    lines: list[str] = []
+    lines: List[str] = []
 
     # Header
     lines.append(
@@ -294,26 +328,28 @@ def format_recipe(recipe: RecipeConfig) -> str:
     lines.append("")
     lines.append("  Bands:")
     lines.append(
-        "    {name:<14} {center:>7} {tol:>7} {sigma:>7} {role:<10} {window}".format(
+        "    {name:<14} {center:>7} {tol:>7} {sigma:>7} {role:<10} {shape:<10} {window}".format(
             name="name",
             center="center",
             tol="tol",
             sigma="sigma",
             role="role",
+            shape="shape",
             window="window",
         )
     )
-    lines.append("    " + "-" * 64)
+    lines.append("    " + "-" * 80)
 
     for b in recipe.bands:
         window_str = f"[{b.window_min:.1f}, {b.window_max:.1f}]"
         lines.append(
-            "    {name:<14} {center:>7.1f} {tol:>7.1f} {sigma:>7.1f} {role:<10} {window}".format(
+            "    {name:<14} {center:>7.1f} {tol:>7.1f} {sigma:>7.1f} {role:<10} {shape:<10} {window}".format(
                 name=b.name[:14],
                 center=b.center,
                 tol=b.tol,
                 sigma=b.sigma,
                 role=b.role,
+                shape=b.shape,
                 window=window_str,
             )
         )

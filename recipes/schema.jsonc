@@ -14,7 +14,7 @@
   //   "center": 950,
   //   "tol": 8,
   //   "sigma": 7,
-  //   "role": "must_have",
+  //   "role": "must-have",
   //   "window_range": {
   //     "min": 930,
   //     "max": 970
@@ -25,6 +25,7 @@
   //     "sigma_min": 3,
   //     "sigma_max": 12
   //   },
+  //   "shape": "gaussian",
   //   "notes": "Main phosphate stretch band; sentinel for LFP chemistry."
   // }
   //
@@ -105,9 +106,27 @@
             "description": "Expected linewidth sigma (cm-1). Derived from median FWHM/2.355."
           },
 
+          // --- new: band shape model ------------------------------------
+          "shape": {
+            "type": "string",
+            "enum": ["gaussian", "pseudovoigt", "template"],
+            "description": "Analytical model for this band; defaults to 'gaussian' if omitted."
+          },
+
+          "eta": {
+            "type": "number",
+            "description": "Mixing parameter for pseudo-Voigt (0 = Gaussian, 1 = Lorentzian). Optional; ignored for pure Gaussian or template bands."
+          },
+
+          "template": {
+            "type": "array",
+            "items": { "type": "number" },
+            "description": "Optional fixed template shape for this band (same length/order as the extracted window). Used when shape='template'."
+          },
+
           "role": {
             "type": "string",
-            "enum": ["anchor", "must_have", "must_not", "watch"],
+            "enum": ["anchor", "must-have", "must-not", "watch"],
             "description": "Role of this band in the decision logic (see BANDS_ROLE.md)."
           },
 
@@ -163,7 +182,7 @@
     // ------------------------------------------------------------
     "epsilon": {
       "type": "number",
-      "description": "Fit error limit (normalized RMSE). Usually P95(local RMSE) + margin."
+      "description": "Fit error limit (model-based RMSE). Usually P95(local RMSE) + margin."
     },
     "tau": {
       "type": "number",

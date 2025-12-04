@@ -6,7 +6,10 @@ Raman band **positions/intensities** come from **polarizability derivatives** (h
 
 **B. Robust tagging in noisy/overlapped windows.**  
 For per-window labelling (PEAK / DRIFTED / NOT-PEAK) at **low SNR** or with **overlap**, a **quantum kernel (QSVM)** can offer richer feature maps than a classical RBF baseline. We keep QSVM as a drop-in kernel; if it beats RBF on our stress bench, we use it—otherwise we fall back to RBF with the same interface. 
-
+It is plausible that QSVM might help in:
+- Small-data regime.
+- Subtle shape/OOD differences. 
+- Multi-band / multi-condition correlations (future)
 ---
 
 ## Selected references (checked)

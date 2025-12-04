@@ -32,7 +32,7 @@
       "center": 950.0,
       "tol": 8.0,
       "sigma": 7.0,
-      "role": "must_have",
+      "role": "must-have",  // main sentinel band
       "window_range": { "min": 930.0, "max": 970.0 },
       "notes": "PO4 symmetric stretch; main sentinel for LFP."
     },
@@ -41,7 +41,7 @@
       "center": 590.0,
       "tol": 10.0,
       "sigma": 8.0,
-      "role": "watch",  // was 'should-have'
+      "role": "watch",  // supporting consistency band
       "window_range": { "min": 570.0, "max": 610.0 },
       "notes": "PO4 bending mode; supporting band for consistency."
     }

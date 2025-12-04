@@ -8,4 +8,4 @@
 ## Quick start
 ```bash
 pip install -e .
-qraman run --recipe recipes/A1/electrolyte_qc-0.1.0.jsonc --input path/to/sample.spc
+pytest

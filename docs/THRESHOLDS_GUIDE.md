@@ -10,7 +10,7 @@ We make **Green / Amber / Red** calls from 2–5 *sentinel bands* by enforcing f
 - **Shift:** \|Δν\| ≤ **tol**  
 - **Fit error:** **RMSE** ≤ **ε**  
 - **Signal quality:** **SNR** ≥ **SNR_min**  
-- **Classifier trust:** **confidence** ≥ **τ**, **OOD similarity** ≥ **κ_min**
+- **Classifier trust (1):** **confidence** ≥ **τ**; (2) **OOD similarity** ≥ **κ_min**
 
 Then aggregate by **role**: all *must-have* satisfied and no *must-not* detected → **Green**; any *must-not* or unresolved overlap → **Red**; otherwise **Amber**. (Do anchor auto-alignment first.)
 
@@ -51,13 +51,21 @@ Goal: allow normal instrument + chemistry drift, reject real mismatches.
 
 ---
 
-### C) Fit error **ε (RMSE)** (normalized)
-- Normalize windows (unit L2 or robust z-score).  
-- Fit each calibration window with our constrained lineshape; compute **RMSE**.  
-- Set **ε** to the **P95** of those RMSE values, then add a small safety margin (e.g., +0.01).  
-- Typical starting point: **ε ≈ 0.05–0.07**.
+### C) Fit error **ε (RMSE)**
 
----
+- For each calibration spectrum and sentinel band, extract the recipe window and:
+  - approximate the **baseline** as the median intensity in the window
+  - build a **unit-amplitude Gaussian template** from the recipe (`center`, `sigma`)
+  - estimate the best-fit amplitude `amp_hat` by least squares
+  - compute **RMSE** between the measured window and this baseline + Gaussian model
+
+- Collect these RMSE values over a **set of “known good” spectra** for the station.
+
+- Set **ε** to the **P95** (95th percentile) of that RMSE distribution and add a small safety margin
+  (e.g. multiply by 1.1–1.2 or add a small constant).
+
+- Typical starting point (after local calibration and intensity scaling) is often in the range  
+  **ε ≈ 0.02–0.10**, but this is **recipe- and instrument-specific** and must be validated per station.
 
 ### D) Classifier confidence **τ**
 - Train the baseline classifier (classical RBF-SVM or QSVM) on noisy/drifted *stress* windows (simulate low SNR, small shifts, overlaps).  
@@ -121,7 +129,7 @@ Goal: allow normal instrument + chemistry drift, reject real mismatches.
 - **σ**: expected linewidth/uncertainty (cm⁻¹)  
 - **RMSE (ε)**: fit error on the window (normalized)  
 - **confidence (τ)**: classifier score threshold (SVM/QSVM)  
-- **κ**: OOD similarity to a reference bank; **κ_min** is its cutoff  
+- **κ**: OOD similarity to a reference bank, it checks **distributional similarity** in feature space; **κ_min** is its cutoff  
 - **SNR**: signal-to-noise in the window; **SNR_min** is its cutoff
 
 ---

@@ -7,13 +7,13 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from edge.recipes import (
+from src.edge.recipes import (
     load_recipe,
     load_recipes_from_index,
     RecipeConfig,
     BandConfig,
 )
-from edge.recipes import format_recipe
+from src.edge.recipes import format_recipe
 
 REPO_ROOT = ROOT
 RECIPES_DIR = REPO_ROOT / "recipes"
@@ -36,7 +36,7 @@ def test_load_cathode_lfp_recipe():
     po4_main = next(b for b in cfg.bands if b.name == "PO4_950")
     assert isinstance(po4_main, BandConfig)
     assert po4_main.center == 950.0
-    assert po4_main.role == "must_have"
+    assert po4_main.role == "must-have"
     assert po4_main.window_min < po4_main.center < po4_main.window_max
 
 
@@ -49,7 +49,7 @@ def test_load_electrolyte_recipe():
     assert len(cfg.bands) >= 3
 
     pf6 = next(b for b in cfg.bands if b.name == "PF6")
-    assert pf6.role == "must_have"
+    assert pf6.role == "must-have"
     assert 730.0 <= pf6.window_min < pf6.center < pf6.window_max <= 760.0
 
     g_band = next(b for b in cfg.bands if b.name == "Graphite_G")
@@ -65,7 +65,7 @@ def test_load_interphase_recipe():
     assert len(cfg.bands) >= 2
 
     li2co3 = next(b for b in cfg.bands if b.name == "Li2CO3")
-    assert li2co3.role == "must_have"
+    assert li2co3.role == "must-have"
     assert 1070.0 <= li2co3.window_min < li2co3.center < li2co3.window_max <= 1110.0
 
     g_band = next(b for b in cfg.bands if b.name == "Graphite_G")
@@ -97,7 +97,6 @@ def test_numeric_constraints_all_recipes():
     assert recipes, "No recipes loaded from index.jsonc"
 
     for name, cfg in recipes.items():
-        print(format_recipe(cfg))
         # ---- Global thresholds ----
         # epsilon: RMSE in [0, ~0.2]
         assert 0.0 < cfg.epsilon < 0.2, f"{name}: epsilon out of range: {cfg.epsilon}"
